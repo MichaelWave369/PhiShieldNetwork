@@ -8,7 +8,7 @@ Version 0.1 — Sentinel Genesis
 - GitHub's public REST API is an untrusted source of metadata, not proof of security.
 - Source-controlled threat JSON is unsigned and must never authorize automatic enforcement.
 - All user-provided targets are validated as GitHub repository names. No secret input fields exist.
-- No telemetry, tracking, storage service or third-party logging is implemented. Fonts are requested from Google; operators who require completely offline fonts can replace that import.
+- No telemetry, tracking, storage service or third-party logging is implemented. No external font or analytics CDN is used; the scanner communicates with GitHub's documented public API.
 
 ## V0.1 scan behavior
 
