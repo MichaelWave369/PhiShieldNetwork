@@ -1,5 +1,6 @@
 import React,{useState} from 'react';
 import feed from './data/wfx-loot.json';
+import {scanRunSequence} from './lib/runForensics.mjs';
 import {DEFAULT_REPOS,MAX_REPOS,parseRepositories,scanRepository,buildReport} from './lib/scanner.mjs';
 
 const initial=DEFAULT_REPOS.map(name=>({repo:'MichaelWave369/'+name,status:'not-scanned',findings:[],errors:[]}));
@@ -11,6 +12,11 @@ function Stat({name,value,note,tone=''}){return <div className={'stat '+tone}><d
 
 export default function App(){
   const [view,setView]=useState('overview');
+  const [runRows,setRunRows]=useState([]);
+  const [runBusy,setRunBusy]=useState(false);
+  const [runProgress,setRunProgress]=useState('');
+  const [runError,setRunError]=useState('');
+  const [runAt,setRunAt]=useState('');
   const [input,setInput]=useState(DEFAULT_REPOS.join(', '));
   const [rows,setRows]=useState(initial);
   const [busy,setBusy]=useState(false);
@@ -18,6 +24,7 @@ export default function App(){
   const [error,setError]=useState('');
   const [lastRun,setLastRun]=useState('');
   const findings=rows.flatMap(r=>r.findings||[]);
+  const runAnomalies=runRows.flatMap(r=>r.anomalies||[]);
   const sampled=rows.filter(r=>r.status==='sampled').length;
   const incomplete=rows.filter(r=>r.status==='partial'||r.status==='unavailable').length;
   const ran=rows.some(r=>r.status!=='not-scanned');
@@ -41,6 +48,38 @@ export default function App(){
     }finally{setBusy(false);setProgress('');}
   }
 
+  async function runChronology(){
+    if(runBusy)return;
+    let targets;
+    try{targets=parseRepositories(input);}catch(e){setRunError(e.message);return;}
+    setRunError('');setRunAt('');setRunBusy(true);
+    const work=targets.map(repo=>({repo,status:'not-scanned',anomalies:[],errors:[]}));
+    setRunRows([...work]);
+    try{
+      for(let i=0;i<targets.length;i++){
+        const repo=targets[i];
+        setRunProgress('Inspecting '+repo+' ('+(i+1)+' / '+targets.length+')');
+        work[i]={...work[i],status:'scanning'};setRunRows([...work]);
+        try{work[i]=await scanRunSequence(repo);}
+        catch(e){work[i]={repo,status:'unavailable',anomalies:[],errors:[String(e.message||e)],sampled_runs:0};}
+        setRunRows([...work]);
+      }
+      setRunAt(new Date().toISOString());
+    }finally{setRunProgress('');setRunBusy(false);}
+  }
+  function downloadChronology(){
+    const evidence={
+      schema:'phishield.actions-chronology.v0',
+      generated_at:new Date().toISOString(),
+      mode:'unauthenticated-read-only-public-api',
+      caveat:'Missing run numbers do not prove deletion or compromise; only sampled public runs are visible.',
+      repositories:runRows
+    };
+    const blob=new Blob([JSON.stringify(evidence,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='phishield-actions-chronology-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
   function download(){
     const report=buildReport(rows);
     const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
@@ -56,12 +95,13 @@ export default function App(){
       <nav aria-label="Application navigation">
         <button className={view==='overview'?'nav-item active':'nav-item'} onClick={()=>setView('overview')}><span>▦</span> Overview</button>
         <button className={view==='intel'?'nav-item active':'nav-item'} onClick={()=>setView('intel')}><span>◎</span> Threat intelligence</button>
+        <button className={view==='forensics'?'nav-item active':'nav-item'} onClick={()=>setView('forensics')}><span>⌁</span> Actions chronology</button>
         <button className={view==='trust'?'nav-item active':'nav-item'} onClick={()=>setView('trust')}><span>◇</span> Trust & methodology</button>
       </nav>
       <div className="sidebar-footer"><div className="mode"><Dot status="sampled"/> READ-ONLY MODE</div><p>No credentials.<br/>No telemetry.<br/>No automatic changes.</p><External href="https://github.com/MichaelWave369/PhiShieldNetwork">VIEW SOURCE</External></div>
     </aside>
     <div className="main">
-      <header className="topbar"><div className="mono">ΦSHIELD <span>/</span> {view==='overview'?'SENTINEL':view.toUpperCase()}</div><div className="right mono"><span className="mode"><Dot status="sampled"/> LOCAL SESSION</span><span>v0.1 · GENESIS</span></div></header>
+      <header className="topbar"><div className="mono">ΦSHIELD <span>/</span> {view==='overview'?'SENTINEL':view.toUpperCase()}</div><div className="right mono"><span className="mode"><Dot status="sampled"/> LOCAL SESSION</span><span>v0.2 · EVIDENCE LAB</span></div></header>
       <div className="page">
         {view==='overview'&&<>
           <section className="hero">
@@ -106,6 +146,53 @@ export default function App(){
             <div className="ioc-list">{feed.indicators.map(i=><div className="ioc" key={i.kind+i.value}><span>{i.kind.toUpperCase()}</span><code>{i.value}</code></div>)}</div>
             <div className="links"><External href={feed.sources[0].url}>Original research</External><External href={feed.sources[1].url}>Independent analysis</External><External href={import.meta.env.BASE_URL+'feeds/wfx-loot.json'}>Machine-readable feed</External></div>
             <p className="disclaimer"><b>Federation caution.</b> This JSON feed is openly readable, but it is not signed or independently attested. No automatic blocking, deletion or credential changes may be driven by these indicators.</p>
+          </section>
+        </>}
+        {view==='forensics'&&<>
+          <div className="page-title">
+            <div className="eyebrow">EVIDENCE LAB / ACTIONS CHRONOLOGY</div>
+            <h1>Follow the <em>missing numbers.</em></h1>
+            <p>Analyze recent public GitHub Actions run-number sequences per workflow. A gap is an investigative clue, never proof of an attack or deleted evidence.</p>
+          </div>
+          <section className="panel forensic-controls">
+            <div className="panel-head"><div><div className="micro">04 / PUBLIC READ-ONLY HISTORY</div><h2>Scan Actions chronology</h2></div><span className="alert-pill">BETA · NO VERDICTS</span></div>
+            <p className="subtle">Uses the same watchlist as the Overview tab. Up to {MAX_REPOS} repositories. One additional public GitHub API request per repository, sampling the most recent 100 workflow runs.</p>
+            <label htmlFor="forensic-repos" className="forensic-label">REPOSITORY TARGETS</label>
+            <textarea id="forensic-repos" rows={3} value={input} disabled={runBusy} spellCheck="false" onChange={e=>setInput(e.target.value)} />
+            <div className="form-foot">
+              <small>Never requests GitHub tokens · GET only · 100-run cap per repository</small>
+              <button className="primary" disabled={runBusy} onClick={runChronology}>{runBusy?'EXAMINING…':'INSPECT PUBLIC RUNS'} ↗</button>
+            </div>
+            {runProgress&&<p role="status" className="scan-status">{runProgress}</p>}
+            {runError&&<p role="alert" className="scan-error">{runError}</p>}
+            <p className="disclaimer"><b>Not a deletion detector.</b> Run number gaps may have benign causes including history retention or API sampling. Private workflows and deleted logs cannot be recovered here.</p>
+          </section>
+          <div className="section-head"><span>05 / CHRONOLOGY REPORT</span><small>{runAt?'Completed '+new Date(runAt).toLocaleString():'No Actions history scan performed'}</small></div>
+          <section className="stats">
+            <Stat name="WATCHLIST" value={String(runRows.length).padStart(2,'0')} note="Targets attempted"/>
+            <Stat name="SAMPLED" value={String(runRows.filter(r=>r.status==='sampled').length).padStart(2,'0')} note="Public run histories" tone="teal"/>
+            <Stat name="GAP SIGNALS" value={String(runAnomalies.length).padStart(2,'0')} note="Requires human investigation" tone={runAnomalies.length?'amber':''}/>
+            <Stat name="INCOMPLETE" value={String(runRows.filter(r=>r.status==='unavailable'||r.possible_truncation).length).padStart(2,'0')} note="Errors or truncated samples"/>
+          </section>
+          <section className="panel repo-panel">
+            <div className="panel-head panel-pad"><div><div className="micro">RUN HISTORY / PER-WORKFLOW SEQUENCES</div><h2>Inspected repositories</h2></div>{runAt&&<button className="secondary" onClick={downloadChronology}>EXPORT EVIDENCE ↓</button>}</div>
+            <div className="table-scroller"><table><thead><tr><th>REPOSITORY</th><th>STATUS</th><th>RUNS SAMPLED</th><th>GAP SIGNALS</th></tr></thead>
+              <tbody>{runRows.map(row=><tr key={row.repo}>
+                <td><b>{row.repo}</b><small>{row.errors?.length?row.errors.join(' · '):row.possible_truncation?'More runs exist; this sample is incomplete':'Public run metadata only, no verdict'}</small></td>
+                <td><Pill status={row.status}/></td><td>{row.sampled_runs??'—'}</td><td className={row.anomalies?.length?'hit':'count'}>{row.anomalies?.length||0}</td>
+              </tr>)}</tbody>
+            </table></div>
+            {!runRows.length&&<div className="table-note">No samples collected. Use the control above to inspect public Actions run numbers.</div>}
+          </section>
+          <section className="panel evidence">
+            <div className="panel-head"><div><div className="micro">06 / RUN-NUMBER EVIDENCE</div><h2>Sequence gaps for review</h2></div><span className="micro">{runAnomalies.length} SIGNALS</span></div>
+            {!runAnomalies.length?<div className="empty"><span>⌁</span><b>{runAt?'No sequence gaps identified in sampled runs':'No Actions evidence collected yet'}</b><p>{runAt?'Not a clean bill of health. Historical or deleted runs may be absent from the API.':'Run the Actions chronology inspection to review recent public history.'}</p></div>:
+              <div className="findings">{runAnomalies.map(item=><div className="finding" key={item.id}>
+                <span className="alert-pill">CHECK</span><div><b>{item.workflow} · {item.missing} run number(s) between #{item.higher} and #{item.lower}</b>
+                  <p>{item.repo}</p><small>{item.explanation}</small>
+                  <div className="run-evidence">{item.evidence.map(ev=><External key={ev.url+ev.run_number} href={ev.url}>Run #{ev.run_number}</External>)}</div>
+                </div>
+              </div>)}</div>}
           </section>
         </>}
         {view==='trust'&&<>
