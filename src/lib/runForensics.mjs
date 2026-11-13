@@ -31,7 +31,7 @@ export function inspectRunSequence(repo, runs=[], metadata={}){
         url:run.html_url
       })).sort((a,b)=>b.run_number-a.run_number);
       gaps.push({
-        id:repo+':'+id+':'+higher+'-'+lower,
+        id:repo+':'+workflow.id+':'+higher+'-'+lower,
         repo,
         workflow_id:id,
         workflow:workflow.name,
