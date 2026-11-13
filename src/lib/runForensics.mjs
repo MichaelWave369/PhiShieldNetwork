@@ -33,7 +33,7 @@ export function inspectRunSequence(repo, runs=[], metadata={}){
       gaps.push({
         id:repo+':'+workflow.id+':'+higher+'-'+lower,
         repo,
-        workflow_id:id,
+        workflow_id:workflow.id,
         workflow:workflow.name,
         higher,lower,missing,
         date_range:[oldest,newest],
