@@ -7,13 +7,14 @@
 - [x] Evidence-linked wfx-loot patterns and provenance references
 - [x] JSON report export and machine-readable unsigned feed
 - [x] Parser and indicator unit tests
-- [ ] Verify green live deployment
+- [x] Verify green live deployment
 
 ## Rung 2 — Evidence Lab
 
 - [ ] Explicit opt-in local authenticated client for private repositories; never upload credentials to the hosted website
 - [ ] Pagination and date-window selection
-- [ ] Historical GitHub Actions run-gap correlation and commit diffs
+- [x] Limited read-only GitHub Actions run-number gap preview (100 latest runs per repo; human review only)
+- [ ] Paginated historical run-gap correlation and workflow/commit diffs
 - [ ] Workflow/script/install-hook analysis with false-positive controls
 - [ ] Saved, locally owned evidence bundles and alerts
 

@@ -2,7 +2,7 @@
 
 **Protect the Field. Protect Each Other.**
 
-ΦShield Network is an open-source, local-first security observatory for independently operated software ecosystems. The first release, **Sentinel Genesis**, is a read-only React dashboard that helps developers review public GitHub repositories for indicators associated with the November 2026 `wfx-loot` GitHub Actions credential-stealing campaign.
+ΦShield Network is an open-source, local-first security observatory for independently operated software ecosystems. The first release, **Sentinel Genesis + Evidence Lab**, is a read-only React dashboard that helps developers review public GitHub repositories for indicators associated with the November 2026 `wfx-loot` GitHub Actions credential-stealing campaign.
 
 > **Status:** experimental research tool. No finding is proof of compromise; no matches do **not** certify a repository as safe.
 
@@ -14,6 +14,10 @@
 - Export a JSON report with scope, errors, timestamps, and limitations.
 - Publish an attributed, **unsigned** threat-intelligence feed for future federation.
 - Present a GitHub Pages-ready React dashboard, with automated test + build checks.
+
+## Evidence Lab (v0.2)
+
+The **Actions chronology** tab examines the most recent 100 public GitHub Actions workflow runs per repository and identifies missing run numbers **within the same workflow**. Each signal links to surrounding public run records. A missing number is **not** proof of deletion, exfiltration, or an attack. GitHub retention, API sampling, and benign administrative actions can also explain discontinuities. All checks are opt-in, use unauthenticated GET requests, and produce downloadable local JSON reports. No credentials or automatic enforcement.
 
 ## Quick start
 
