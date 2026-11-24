@@ -1,5 +1,6 @@
 import React,{useState} from 'react';
 import feed from './data/wfx-loot.json';
+import RuntimeDefense from './RuntimeDefense.jsx';
 import {scanRunSequence} from './lib/runForensics.mjs';
 import {DEFAULT_REPOS,MAX_REPOS,parseRepositories,scanRepository,buildReport} from './lib/scanner.mjs';
 
@@ -96,12 +97,13 @@ export default function App(){
         <button className={view==='overview'?'nav-item active':'nav-item'} onClick={()=>setView('overview')}><span>▦</span> Overview</button>
         <button className={view==='intel'?'nav-item active':'nav-item'} onClick={()=>setView('intel')}><span>◎</span> Threat intelligence</button>
         <button className={view==='forensics'?'nav-item active':'nav-item'} onClick={()=>setView('forensics')}><span>⌁</span> Actions chronology</button>
+        <button className={view==='runtime'?'nav-item active':'nav-item'} onClick={()=>setView('runtime')}><span>⬡</span> Runtime defense</button>
         <button className={view==='trust'?'nav-item active':'nav-item'} onClick={()=>setView('trust')}><span>◇</span> Trust & methodology</button>
       </nav>
       <div className="sidebar-footer"><div className="mode"><Dot status="sampled"/> READ-ONLY MODE</div><p>No credentials.<br/>No telemetry.<br/>No automatic changes.</p><External href="https://github.com/MichaelWave369/PhiShieldNetwork">VIEW SOURCE</External></div>
     </aside>
     <div className="main">
-      <header className="topbar"><div className="mono">ΦSHIELD <span>/</span> {view==='overview'?'SENTINEL':view.toUpperCase()}</div><div className="right mono"><span className="mode"><Dot status="sampled"/> LOCAL SESSION</span><span>v0.2 · EVIDENCE LAB</span></div></header>
+      <header className="topbar"><div className="mono">ΦSHIELD <span>/</span> {view==='overview'?'SENTINEL':view.toUpperCase()}</div><div className="right mono"><span className="mode"><Dot status="sampled"/> LOCAL SESSION</span><span>v0.3 · RUNTIME LAB</span></div></header>
       <div className="page">
         {view==='overview'&&<>
           <section className="hero">
@@ -195,6 +197,7 @@ export default function App(){
               </div>)}</div>}
           </section>
         </>}
+        {view==='runtime'&&<RuntimeDefense/>}
         {view==='trust'&&<>
           <div className="page-title"><div className="eyebrow">TRUST / SECURITY MODEL</div><h1>Evidence above ego.</h1><p>Shared defense works when each participant keeps control over their own infrastructure.</p></div>
           <div className="principles">{[
