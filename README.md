@@ -19,6 +19,10 @@
 
 The **Actions chronology** tab examines the most recent 100 public GitHub Actions workflow runs per repository and identifies missing run numbers **within the same workflow**. Each signal links to surrounding public run records. A missing number is **not** proof of deletion, exfiltration, or an attack. GitHub retention, API sampling, and benign administrative actions can also explain discontinuities. All checks are opt-in, use unauthenticated GET requests, and produce downloadable local JSON reports. No credentials or automatic enforcement.
 
+## Runtime Defense Lab (v0.3)
+
+The Runtime defense tab rehearses monitoring, explicit local approval, simulated activation, expiry, rollback and retirement against synthetic events. The collateral scenario demonstrates why legitimate traffic must be tested before any mitigation is approved. No real Shirudo connection or privileged operation is implemented. See [runtime defense design](docs/RUNTIME_DEFENSE.md).
+
 ## Quick start
 
 Requires Node.js 22 or later.
